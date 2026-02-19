@@ -13,20 +13,15 @@ const ProductList = () => {
 
     const loadProducts = async () => {
         try {
-            const response = await getProducts() as any;
-            // FIX: Check if the API returns a paginated object or a direct array
+            const response = await getProducts();
+            // Handle both standard arrays and paginated object structures safely
             if (Array.isArray(response.data)) {
-                // Scenario A: API returns just [ ... ]
                 setProducts(response.data);
-            } else if (response.data.data && Array.isArray(response.data.data)) {
-                // Scenario B: API returns { pageIndex: 1, data: [ ... ] }
-                // This is likely what matches your Swagger output
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
                 setProducts(response.data.data);
             } else {
-                console.error("Unexpected API response format:", response.data);
                 setProducts([]);
             }
-
         } catch (error) {
             console.error("Error loading products", error);
             setProducts([]);
@@ -40,7 +35,6 @@ const ProductList = () => {
 
         try {
             await deleteProduct(id);
-            // Remove from local state immediately so we don't need to reload
             setProducts(products.filter(p => p.id !== id));
         } catch (error) {
             console.error("Error deleting product", error);
@@ -48,59 +42,92 @@ const ProductList = () => {
         }
     };
 
-    if (loading) return <div className="container mt-4">Loading...</div>;
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="container mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>Product Inventory</h2>
-                <Link to="/add" className="btn btn-success">
+        <div className="container-fluid py-4 max-w-1200 mx-auto">
+
+            {/* Header Section */}
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+                <div>
+                    <h2 className="fw-bold mb-1">Inventory Dashboard</h2>
+                    <p className="text-muted mb-0">Manage your 3D print listings</p>
+                </div>
+                <Link to="/add" className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold">
                     + Add New Product
                 </Link>
             </div>
 
-            <div className="card shadow-sm">
-                <div className="card-body p-0">
-                    <table className="table table-striped table-hover mb-0">
-                        <thead className="table-dark">
-                            <tr>
-                                <th>Thumbnail</th>
-                                <th>Title</th>
-                                <th>Category</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th className="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products?.map(product => (
-                                <tr key={product.id} className="align-middle">
-                                    <td>
-                                        <img
-                                            src={product.thumbnail}
-                                            alt={product.title}
-                                            style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
-                                        />
-                                    </td>
-                                    <td>{product.title}</td>
-                                    <td><span className="badge bg-secondary">{product.category}</span></td>
-                                    <td>${product.price}</td>
-                                    <td>{product.stock}</td>
-                                    <td className="text-end">
-                                        <Link to={`/edit/${product.id}`} className="btn btn-sm btn-outline-primary me-2">
-                                            Edit
-                                        </Link>
-                                        <button
-                                            onClick={() => handleDelete(product.id)}
-                                            className="btn btn-sm btn-outline-danger">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            {/* Empty State */}
+            {products?.length === 0 && (
+                <div className="text-center py-5 bg-light rounded-4">
+                    <h4 className="text-muted">No products found.</h4>
+                    <p>Click the button above to add your first item.</p>
                 </div>
+            )}
+
+            {/* Responsive Card Grid */}
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                {products?.map(product => (
+                    <div className="col" key={product.id}>
+                        <div className="card h-100 border-0 shadow-sm admin-product-card rounded-4 overflow-hidden">
+
+                            {/* Image Container with 1:1 Aspect Ratio */}
+                            <div className="position-relative bg-light w-100" style={{ height: '250px', overflow: 'hidden' }}>
+                                <img
+                                    src={product.thumbnail}
+                                    alt={product.title}
+                                    className="w-100 h-100"
+                                    style={{ objectFit: 'cover', objectPosition: 'center' }}
+                                />
+                                {/* Category Badge */}
+                                <span className="position-absolute top-0 end-0 m-3 badge bg-white text-dark shadow-sm">
+                                    {product.category}
+                                </span>
+                            </div>
+
+                            <div className="card-body d-flex flex-column p-4">
+                                {/* Title & Stock */}
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 className="card-title fw-bold mb-0 text-truncate pe-2" title={product.title}>
+                                        {product.title}
+                                    </h5>
+                                </div>
+
+                                {/* Price & Dynamic Stock Indicator */}
+                                <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
+                                    <span className="fs-5 fw-bold text-dark">${product.price}</span>
+
+                                    <span className={`badge rounded-pill px-3 py-2 ${product.stock > 5 ? 'bg-success-subtle text-success' :
+                                            product.stock > 0 ? 'bg-warning-subtle text-warning' :
+                                                'bg-danger-subtle text-danger'
+                                        }`}>
+                                        {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                                    </span>
+                                </div>
+
+                                {/* Action Buttons - Pushed to bottom via mt-auto */}
+                                <div className="mt-auto d-flex gap-2">
+                                    <Link to={`/edit/${product.id}`} className="btn btn-light flex-grow-1 rounded-pill fw-semibold border">
+                                        Edit
+                                    </Link>
+                                    <button onClick={() => handleDelete(product.id)} className="btn btn-outline-danger flex-grow-1 rounded-pill fw-semibold">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
