@@ -127,3 +127,11 @@ body {
 .max-w-1200 {
   max-width: 1200px;
 }
+
+/* Add to src/index.css */
+.hover-opacity {
+  transition: opacity 0.2s;
+}
+.hover-opacity:hover {
+  opacity: 0.6;
+}

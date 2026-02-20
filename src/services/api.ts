@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { Product } from '../types/product';
 import type { PaginationResponse } from '../types/pagination';
+import type { Order } from '../types/order';
 
 // CHANGE THIS to your actual .NET API URL
 const API_URL = 'https://localhost:7085/api';
@@ -39,4 +40,15 @@ export const updateProduct = async (id: string, product: Product) => {
 
 export const deleteProduct = async (id: number) => {
     return await api.delete(`/products/${id}`);
+};
+
+export const getOrders = async () => {
+    // Note: If you created a specific endpoint for admins to see ALL orders, 
+    // change this route (e.g., '/orders/all'). Otherwise, '/orders' usually 
+    // just returns orders for the currently logged-in user in Neil's course.
+    return await api.get<Order[]>('/orders/all'); 
+};
+
+export const deleteOrder = async (id: number) => {
+    return await api.delete(`/orders/${id}`); 
 };
