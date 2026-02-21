@@ -4,7 +4,7 @@ import type { PaginationResponse } from '../types/pagination';
 import type { Order } from '../types/order';
 
 // CHANGE THIS to your actual .NET API URL
-const API_URL = 'https://localhost:7085/api';
+const API_URL = 'https://app-store-api-gne8fjfqc7eueae7.swedencentral-01.azurewebsites.net/api';
 
 // 1. Create a base axios instance
 export const api = axios.create({
